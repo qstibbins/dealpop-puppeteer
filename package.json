@@ -1,0 +1,39 @@
+{
+  "name": "deal-pop-scraper",
+  "version": "1.0.0",
+  "description": "DealPop Web Scraping Service",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "scraper:test": "node price-scraper/test.js",
+    "scraper:single": "node price-scraper/scraper.js",
+    "scraper:cron": "node cron/scrapePrices.js",
+    "jobs:schedule": "node jobs/scheduler.js",
+    "jobs:worker": "node jobs/worker.js",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "puppeteer": "^21.6.1",
+    "dotenv": "^16.0.3",
+    "pg": "^8.11.0",
+    "@sendgrid/mail": "^7.7.0",
+    "node-cron": "^3.0.2"
+  },
+  "optionalDependencies": {
+    "bullmq": "^3.12.0",
+    "redis": "^4.6.5",
+    "ioredis": "^5.3.2",
+    "twilio": "^4.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "jest": "^29.5.0",
+    "eslint": "^8.38.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
