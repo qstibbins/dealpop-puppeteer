@@ -34,7 +34,7 @@ export async function scrapeProduct(browser, product) {
     });
     
     // Add a small delay to let dynamic content load
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Extract price
     const newPrice = await extractPrice(page);
@@ -86,7 +86,15 @@ export async function runPriceCheck(products) {
   
   const browser = await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
   });
   
   const results = [];
