@@ -161,6 +161,135 @@ export function extractVendor(url) {
 }
 
 /**
+ * Extract product variants (color, size, capacity, etc.)
+ * @param {Page} page - Puppeteer page object
+ * @returns {Promise<Object>}
+ */
+export async function extractVariants(page) {
+  return await page.evaluate(() => {
+    console.log('🔍 Extracting product variants...');
+    
+    const variants = {
+      color: null,
+      capacity: null,
+      size: null,
+      brand: null
+    };
+    
+    // First try structured data
+    try {
+      const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+      
+      for (const script of jsonLdScripts) {
+        const data = JSON.parse(script.textContent || '');
+        const items = Array.isArray(data) ? data : [data];
+        
+        // Check for @graph
+        if (data['@graph']) {
+          items.push(...data['@graph']);
+        }
+        
+        for (const item of items) {
+          if (item['@type'] === 'Product' || 
+              (Array.isArray(item['@type']) && item['@type'].includes('Product'))) {
+            
+            // Extract brand
+            if (item.brand) {
+              variants.brand = typeof item.brand === 'string' 
+                ? item.brand 
+                : item.brand.name || item.brand['@value'];
+            }
+            
+            // Extract color from properties
+            if (item.color) {
+              variants.color = typeof item.color === 'string' 
+                ? item.color 
+                : item.color.name || item.color['@value'];
+            }
+            
+            // Check for additional properties
+            if (item.additionalProperty && Array.isArray(item.additionalProperty)) {
+              item.additionalProperty.forEach(prop => {
+                const name = (prop.name || '').toLowerCase();
+                const value = prop.value || prop['@value'];
+                
+                if (name.includes('color') || name.includes('colour')) {
+                  variants.color = value;
+                } else if (name.includes('capacity') || name.includes('storage')) {
+                  variants.capacity = value;
+                } else if (name.includes('size')) {
+                  variants.size = value;
+                }
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ Error parsing JSON-LD for variants:', e.message);
+    }
+    
+    // Fallback: Try to extract from meta tags
+    if (!variants.brand) {
+      const brandMeta = document.querySelector('meta[property="og:brand"]') ||
+                       document.querySelector('meta[name="brand"]') ||
+                       document.querySelector('[itemprop="brand"]');
+      if (brandMeta) {
+        variants.brand = brandMeta.content || brandMeta.textContent;
+      }
+    }
+    
+    // Fallback: Try to extract from page elements
+    if (!variants.color) {
+      // Common patterns for color selection
+      const colorElements = document.querySelectorAll([
+        '[class*="color"][class*="selected"]',
+        '[class*="colour"][class*="selected"]',
+        '[data-color]',
+        '#variation_color_name',
+        '#native_dropdown_selected_size_name'
+      ].join(','));
+      
+      for (const el of colorElements) {
+        const text = el.textContent?.trim() || el.getAttribute('data-color') || el.value;
+        if (text && text.length < 50) {
+          variants.color = text;
+          break;
+        }
+      }
+    }
+    
+    // Try to extract capacity/storage (common for electronics)
+    if (!variants.capacity) {
+      const capacityElements = document.querySelectorAll([
+        '[class*="capacity"][class*="selected"]',
+        '[class*="storage"][class*="selected"]',
+        '[data-capacity]',
+        '[data-storage]'
+      ].join(','));
+      
+      for (const el of capacityElements) {
+        const text = el.textContent?.trim() || el.getAttribute('data-capacity') || el.getAttribute('data-storage');
+        if (text && text.length < 50) {
+          variants.capacity = text;
+          break;
+        }
+      }
+      
+      // Also check title for capacity patterns (e.g., "256GB", "1TB")
+      const title = document.querySelector('h1')?.textContent || document.title;
+      const capacityMatch = title.match(/\b(\d+\s*(GB|TB|MB))\b/i);
+      if (capacityMatch && !variants.capacity) {
+        variants.capacity = capacityMatch[1];
+      }
+    }
+    
+    console.log('✅ Extracted variants:', variants);
+    return variants;
+  });
+}
+
+/**
  * Extract all product metadata
  * @param {Page} page - Puppeteer page object
  * @returns {Promise<Object>}
@@ -168,10 +297,11 @@ export function extractVendor(url) {
 export async function extractMetadata(page) {
   console.log('📊 Extracting product metadata...');
   
-  const [title, image, canonicalUrl] = await Promise.all([
+  const [title, image, canonicalUrl, variants] = await Promise.all([
     extractTitle(page),
     extractImage(page),
-    extractCanonicalUrl(page)
+    extractCanonicalUrl(page),
+    extractVariants(page)
   ]);
   
   const vendor = extractVendor(canonicalUrl);
@@ -180,7 +310,11 @@ export async function extractMetadata(page) {
     title: title || 'Unknown Product',
     image: image || null,
     url: canonicalUrl,
-    vendor
+    vendor,
+    brand: variants.brand || null,
+    color: variants.color || null,
+    capacity: variants.capacity || null,
+    size: variants.size || null
   };
 }
 

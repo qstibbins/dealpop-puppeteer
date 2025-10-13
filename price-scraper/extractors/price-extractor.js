@@ -73,13 +73,13 @@ export function getPriceLikelihoodScore(element) {
 }
 
 /**
- * Extract price using universal semantic selectors
+ * Extract price using Amazon-specific selectors first, then universal
  * @param {Page} page - Puppeteer page object
  * @returns {Promise<number|null>}
  */
 export async function extractUniversalPrice(page) {
   return await page.evaluate((selectors) => {
-    console.log('🔍 Trying universal semantic selectors...');
+    console.log('🔍 Trying Amazon-specific selectors first...');
     
     // Helper: check if text contains price
     const containsPrice = (text) => {
@@ -96,24 +96,82 @@ export async function extractUniversalPrice(page) {
       return null;
     };
     
-    // Try each universal selector
+    // Helper: check if element is likely the main product price
+    const isMainProductPrice = (element) => {
+      const text = element.textContent || '';
+      const className = element.className || '';
+      const id = element.id || '';
+      
+      // Skip protection plans, warranties, shipping, etc.
+      if (text.toLowerCase().includes('protection') || 
+          text.toLowerCase().includes('warranty') ||
+          text.toLowerCase().includes('shipping') ||
+          text.toLowerCase().includes('plan') ||
+          className.includes('protection') ||
+          className.includes('warranty')) {
+        return false;
+      }
+      
+      // Prefer main price elements
+      if (className.includes('a-price-whole') || 
+          className.includes('a-price-symbol') ||
+          className.includes('a-price-fraction') ||
+          className.includes('reinventPriceAccordionT2')) {
+        return true;
+      }
+      
+      return true; // Default to true for other elements
+    };
+    
+    // Amazon-specific selectors (try these first)
+    const amazonSelectors = [
+      '.a-price-whole', // Main price whole number
+      '.a-price .a-offscreen', // Hidden price text
+      '.a-price.a-text-normal', // Normal price
+      '.a-price.a-text-price', // Price text
+      '[data-a-color="base"] .a-price', // Base color price
+      '.a-price[data-a-size="l"]', // Large price
+      '.reinventPriceAccordionT2 .a-price', // Your specific selector
+      '.a-price.a-text-normal.aok-align-center', // Centered price
+    ];
+    
+    // Try Amazon-specific selectors first
+    for (const selector of amazonSelectors) {
+      try {
+        const elements = document.querySelectorAll(selector);
+        for (const element of elements) {
+          if (element && containsPrice(element.textContent || '') && isMainProductPrice(element)) {
+            const price = extractNumericPrice(element.textContent || '');
+            if (price && price > 0 && price < 10000) { // Reasonable price range
+              console.log(`✅ Amazon selector found price: ${selector} = $${price}`);
+              return price;
+            }
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+    
+    console.log('🔍 Trying universal semantic selectors...');
+    
+    // Try universal selectors as fallback
     for (const selector of selectors) {
       try {
         const element = document.querySelector(selector);
-        if (element && containsPrice(element.textContent || '')) {
+        if (element && containsPrice(element.textContent || '') && isMainProductPrice(element)) {
           const price = extractNumericPrice(element.textContent || '');
-          if (price && price > 0) {
+          if (price && price > 0 && price < 10000) { // Reasonable price range
             console.log(`✅ Universal selector found price: ${selector} = $${price}`);
             return price;
           }
         }
       } catch (e) {
-        // Skip invalid selectors
         continue;
       }
     }
     
-    console.log('❌ No price found with universal selectors');
+    console.log('❌ No price found with any selectors');
     return null;
   }, UNIVERSAL_SELECTORS);
 }
