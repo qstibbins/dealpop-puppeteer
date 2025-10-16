@@ -6,7 +6,6 @@ build:
       - echo "Building DealPop Price Scraper..."
       - docker build -t dealpop-scraper .
 run:
-  runtime-version: latest
   command: docker run -p 3000:3000 dealpop-scraper
   network:
     port: 3000
