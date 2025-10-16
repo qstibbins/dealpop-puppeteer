@@ -1,17 +1,20 @@
 version: 1.0
-runtime: nodejs18
+runtime: docker
 build:
   commands:
     build:
-      - npm install
+      - echo "Building DealPop Price Scraper..."
+      - docker build -t dealpop-scraper .
 run:
-  runtime-version: 18
-  command: node server.js
+  runtime-version: latest
+  command: docker run -p 3000:3000 dealpop-scraper
   network:
     port: 3000
   env:
     - name: NODE_ENV
       value: production
+    - name: PORT
+      value: "3000"
     - name: DB_HOST
       value: ${DB_HOST}
     - name: DB_PORT

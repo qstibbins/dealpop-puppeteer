@@ -39,19 +39,41 @@ async function runScraperJob() {
   console.log(`⏰ ${new Date().toISOString()}\n`);
   
   try {
-    // Get products for stibbins99@gmail.com
+    // Get all active tracked products
     const productsResult = await pool.query(`
       SELECT 
-        id, user_id, product_url, product_name, 
-        vendor, current_price, target_price
-      FROM tracked_products 
-      WHERE user_id = 'b5e7wHFfyZg2On72tL0mAMScGmO2'
-      ORDER BY id DESC
-      LIMIT 10
+        tp.id, tp.user_id, tp.product_url, tp.product_name, 
+        tp.vendor, tp.current_price, tp.target_price,
+        u.email, u.display_name
+      FROM tracked_products tp
+      JOIN users u ON tp.user_id = u.firebase_uid
+      WHERE tp.status = 'tracking'
+        AND tp.expires_at > NOW()
+      ORDER BY tp.updated_at ASC
+      LIMIT 50
     `);
     
     const products = productsResult.rows;
-    console.log(`📦 Found ${products.length} products to check\n`);
+    console.log(`📦 Found ${products.length} products to check`);
+    
+    // Group products by user for better logging
+    const productsByUser = products.reduce((acc, product) => {
+      const userKey = `${product.email} (${product.user_id})`;
+      if (!acc[userKey]) {
+        acc[userKey] = [];
+      }
+      acc[userKey].push(product);
+      return acc;
+    }, {});
+    
+    console.log(`👥 Processing products for ${Object.keys(productsByUser).length} users:`);
+    Object.entries(productsByUser).forEach(([user, userProducts]) => {
+      console.log(`   📧 ${user}: ${userProducts.length} products`);
+      userProducts.forEach(product => {
+        console.log(`      • ${product.product_name} (${product.vendor}) - Current: $${product.current_price}, Target: $${product.target_price}`);
+      });
+    });
+    console.log('');
     
     if (products.length === 0) {
       console.log('No products found to scrape');
@@ -85,18 +107,30 @@ async function runScraperJob() {
         a.target_price,
         a.notification_preferences,
         tp.current_price as latest_price,
-        u.email
+        u.email,
+        u.display_name
       FROM alerts a
       JOIN tracked_products tp ON a.product_id = tp.id
       JOIN users u ON a.user_id = u.firebase_uid
-      WHERE a.user_id = 'b5e7wHFfyZg2On72tL0mAMScGmO2'
-        AND a.status = 'active'
+      WHERE a.status = 'active'
         AND a.alert_type = 'price_drop'
         AND tp.current_price <= a.target_price
+        AND a.expires_at > NOW()
     `);
     
     const alerts = alertsResult.rows;
-    console.log(`📊 Found ${alerts.length} active alerts to process\n`);
+    console.log(`📊 Found ${alerts.length} active alerts to process`);
+    
+    if (alerts.length > 0) {
+      console.log('🎯 Alert details:');
+      alerts.forEach(alert => {
+        console.log(`   📧 ${alert.email} (${alert.user_id})`);
+        console.log(`      • Product: ${alert.product_name}`);
+        console.log(`      • Price: $${alert.latest_price} (Target: $${alert.target_price})`);
+        console.log(`      • Alert ID: ${alert.alert_id}`);
+      });
+      console.log('');
+    }
     
     // Send email notifications
     for (const alert of alerts) {
@@ -133,8 +167,8 @@ async function runScraperJob() {
   }
 }
 
-// Schedule scraper to run every 5 minutes
-cron.schedule('*/5 * * * *', () => {
+// Schedule scraper to run every 10 minutes
+cron.schedule('*/10 * * * *', () => {
   console.log('⏰ Cron trigger: Starting scheduled scraper job');
   runScraperJob().catch(error => {
     console.error('❌ Scheduled job failed:', error);
@@ -144,7 +178,7 @@ cron.schedule('*/5 * * * *', () => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Price scraper server running on port ${PORT}`);
-  console.log(`📅 Scheduled to run every 5 minutes`);
+  console.log(`📅 Scheduled to run every 10 minutes`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 Manual trigger: POST http://localhost:${PORT}/trigger`);
 });
