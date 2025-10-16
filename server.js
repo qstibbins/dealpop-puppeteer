@@ -181,6 +181,15 @@ app.listen(PORT, () => {
   console.log(`📅 Scheduled to run every 10 minutes`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 Manual trigger: POST http://localhost:${PORT}/trigger`);
+  
+  // Debug information
+  console.log(`🔍 DEBUG INFO:`);
+  console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`   PORT: ${process.env.PORT}`);
+  console.log(`   DB_HOST: ${process.env.DB_HOST ? 'SET' : 'NOT SET'}`);
+  console.log(`   SENDGRID_API_KEY: ${process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET'}`);
+  console.log(`   Node.js version: ${process.version}`);
+  console.log(`   Working directory: ${process.cwd()}`);
 });
 
 // Run scraper once on startup
