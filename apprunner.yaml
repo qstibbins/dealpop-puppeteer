@@ -9,28 +9,3 @@ run:
   command: docker run -p 3000:3000 dealpop-scraper
   network:
     port: 3000
-  env:
-    - name: NODE_ENV
-      value: production
-    - name: PORT
-      value: "3000"
-    - name: DB_HOST
-      value: ${DB_HOST}
-    - name: DB_PORT
-      value: ${DB_PORT}
-    - name: DB_NAME
-      value: ${DB_NAME}
-    - name: DB_USER
-      value: ${DB_USER}
-    - name: DB_PASSWORD
-      value: ${DB_PASSWORD}
-    - name: DB_SSL
-      value: ${DB_SSL}
-    - name: SENDGRID_API_KEY
-      value: ${SENDGRID_API_KEY}
-    - name: SENDGRID_FROM_EMAIL
-      value: ${SENDGRID_FROM_EMAIL}
-    - name: TWILIO_ACCOUNT_SID
-      value: ${TWILIO_ACCOUNT_SID}
-    - name: TWILIO_AUTH_TOKEN
-      value: ${TWILIO_AUTH_TOKEN}
