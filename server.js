@@ -192,6 +192,38 @@ app.listen(PORT, () => {
   console.log(`   Working directory: ${process.cwd()}`);
 });
 
+// Add error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('💥 UNCAUGHT EXCEPTION:', error);
+  console.error('Stack:', error.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 UNHANDLED REJECTION at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Test Puppeteer on startup
+console.log('🔍 Testing Puppeteer availability...');
+try {
+  const puppeteer = await import('puppeteer');
+  console.log('✅ Puppeteer imported successfully');
+  
+  // Try to launch browser
+  const browser = await puppeteer.default.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  console.log('✅ Puppeteer browser launched successfully');
+  await browser.close();
+  console.log('✅ Puppeteer test completed successfully');
+} catch (error) {
+  console.error('❌ PUPPETEER TEST FAILED:', error);
+  console.error('Error details:', error.message);
+  console.error('Stack:', error.stack);
+}
+
 // Run scraper once on startup
 console.log('🚀 Starting initial scraper run...');
 runScraperJob().catch(error => {

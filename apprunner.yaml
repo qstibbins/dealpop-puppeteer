@@ -3,8 +3,17 @@ runtime: nodejs18
 build:
   commands:
     build:
-      - echo "Installing dependencies..."
-      - npm install --production
+      - echo "=== BUILD STARTING ==="
+      - echo "Node.js version: $(node --version)"
+      - echo "NPM version: $(npm --version)"
+      - echo "Working directory: $(pwd)"
+      - echo "Files in directory:"
+      - ls -la
+      - echo "=== INSTALLING DEPENDENCIES ==="
+      - npm install --production --verbose
+      - echo "=== CHECKING PUPPETEER ==="
+      - npm list puppeteer
+      - echo "=== BUILD COMPLETE ==="
 run:
   runtime-version: 18
   command: npm start
