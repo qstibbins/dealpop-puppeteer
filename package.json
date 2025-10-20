@@ -23,7 +23,7 @@
     "express": "^4.18.2",
     "node-cron": "^3.0.2",
     "pg": "^8.11.0",
-    "puppeteer": "^24.23.0"
+    "puppeteer-core": "^24.23.0"
   },
   "optionalDependencies": {
     "bullmq": "^3.12.0",
@@ -40,6 +40,7 @@
     "node": ">=16.0.0"
   },
   "puppeteer": {
+    "executablePath": "/usr/bin/google-chrome-stable",
     "args": [
       "--no-sandbox",
       "--disable-setuid-sandbox",
