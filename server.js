@@ -204,22 +204,22 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Test Puppeteer on startup
-console.log('🔍 Testing Puppeteer availability...');
+// Test Playwright on startup
+console.log('🔍 Testing Playwright availability...');
 try {
-  const puppeteer = await import('puppeteer');
-  console.log('✅ Puppeteer imported successfully');
-  
+  const { chromium } = await import('playwright');
+  console.log('✅ Playwright imported successfully');
+
   // Try to launch browser
-  const browser = await puppeteer.default.launch({
+  const browser = await chromium.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
-  console.log('✅ Puppeteer browser launched successfully');
+  console.log('✅ Playwright browser launched successfully');
   await browser.close();
-  console.log('✅ Puppeteer test completed successfully');
+  console.log('✅ Playwright test completed successfully');
 } catch (error) {
-  console.error('❌ PUPPETEER TEST FAILED:', error);
+  console.error('❌ PLAYWRIGHT TEST FAILED:', error);
   console.error('Error details:', error.message);
   console.error('Stack:', error.stack);
 }
