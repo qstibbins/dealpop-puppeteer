@@ -23,7 +23,7 @@
     "express": "^4.18.2",
     "node-cron": "^3.0.2",
     "pg": "^8.11.0",
-    "puppeteer-core": "^24.23.0"
+    "playwright": "^1.40.0"
   },
   "optionalDependencies": {
     "bullmq": "^3.12.0",
