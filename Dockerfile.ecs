@@ -49,6 +49,12 @@ RUN npm install --production
 # Install Playwright browsers
 RUN npx playwright install chromium
 
+# Install Playwright system dependencies
+RUN npx playwright install-deps
+
+# Add memory optimization environment variables
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 # Copy application code
 COPY . .
 

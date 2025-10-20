@@ -9,13 +9,14 @@ import { extractMetadata } from './extractors/metadata-extractor.js';
 
 /**
  * Scrape price for a single product
- * @param {Browser} browser - Puppeteer browser instance
+ * @param {Browser} browser - Playwright browser instance
  * @param {Object} product - Product object with id and product_url
  * @returns {Promise<Object>} - Result with price or error
  */
 export async function scrapeProduct(browser, product) {
   let page;
   try {
+    // Create new page - will throw if browser is closed
     page = await browser.newPage();
     console.log(`\n${'='.repeat(80)}`);
     console.log(`🛍️  Scraping: ${product.product_name || product.product_url}`);
@@ -36,8 +37,12 @@ export async function scrapeProduct(browser, product) {
     // Add a small delay to let dynamic content load
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Extract price
+    // Extract price with better error handling
     const newPrice = await extractPrice(page);
+    
+    if (!newPrice || newPrice <= 0) {
+      throw new Error('Invalid price extracted');
+    }
     
     console.log(`\n✅ SUCCESS!`);
     console.log(`   Product: ${product.product_name || 'Unknown'}`);
@@ -64,8 +69,14 @@ export async function scrapeProduct(browser, product) {
     
   } catch (error) {
     console.error(`\n❌ FAILED: ${error.message}`);
+    
+    // Clean up page if it exists
     if (page) {
-      await page.close();
+      try {
+        await page.close();
+      } catch (closeError) {
+        console.warn('Error closing page:', closeError.message);
+      }
     }
     
     return {
@@ -86,42 +97,81 @@ export async function runPriceCheck(products) {
   console.log(`\n🚀 Starting price check for ${products.length} products...`);
   console.log(`⏰ ${new Date().toISOString()}\n`);
   
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu',
-      '--single-process'
-    ]
-  });
-  
   const results = [];
   
   for (const product of products) {
-    try {
-      const result = await scrapeProduct(browser, product);
-      results.push(result);
-      
-      // Add delay between requests to be polite
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-    } catch (error) {
-      console.error(`Failed to scrape product ${product.id}:`, error);
-      results.push({
-        productId: product.id,
-        success: false,
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
+    let retryCount = 0;
+    const maxRetries = 2;
+    let browser = null;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        // Create fresh browser for each product (Playwright stability fix)
+        console.log(`🔄 Creating fresh browser for product ${product.id}...`);
+        browser = await chromium.launch({
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--single-process',
+            '--memory-pressure-off',
+            '--max_old_space_size=4096',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+          ]
+        });
+        
+        const result = await scrapeProduct(browser, product);
+        results.push(result);
+        
+        // Close browser immediately after successful scrape
+        await browser.close();
+        console.log(`✅ Browser closed for product ${product.id}`);
+        
+        // Add delay between requests to be polite
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        break; // Success, exit retry loop
+        
+      } catch (error) {
+        console.error(`Failed to scrape product ${product.id} (attempt ${retryCount + 1}):`, error.message);
+        
+        // Close browser on error
+        if (browser) {
+          try {
+            await browser.close();
+          } catch (closeError) {
+            console.warn('Error closing browser:', closeError.message);
+          }
+        }
+        
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          // Max retries reached, add failure result
+          results.push({
+            productId: product.id,
+            success: false,
+            error: error.message,
+            timestamp: new Date().toISOString()
+          });
+          break;
+        } else {
+          // Wait before retry
+          console.log(`🔄 Retrying product ${product.id} in 3 seconds...`);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
     }
   }
-  
-  await browser.close();
   
   // Summary
   console.log(`\n${'='.repeat(80)}`);
