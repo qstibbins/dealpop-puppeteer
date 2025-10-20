@@ -5,7 +5,6 @@
 
 import { chromium } from 'playwright';
 import { extractPrice } from './extractors/price-extractor.js';
-import { extractMetadata } from './extractors/metadata-extractor.js';
 
 /**
  * Scrape price for a single product

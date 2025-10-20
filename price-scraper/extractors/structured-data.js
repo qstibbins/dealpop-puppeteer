@@ -6,7 +6,7 @@
 
 /**
  * Extract price from JSON-LD structured data
- * @param {Page} page - Puppeteer page object
+ * @param {Page} page - Playwright page object
  * @returns {Promise<number|null>} - Price or null if not found
  */
 export async function extractPriceFromStructuredData(page) {

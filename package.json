@@ -6,15 +6,9 @@
   "main": "server.js",
   "scripts": {
     "preinstall": "echo '=== PRE-INSTALL DEBUG ===' && echo 'Node version:' && node --version && echo 'NPM version:' && npm --version && echo 'Working directory:' && pwd && echo 'Environment:' && env | grep -E '(NODE|NPM|PATH)' && echo '=== END PRE-INSTALL ==='",
-    "postinstall": "echo '=== POST-INSTALL DEBUG ===' && echo 'Checking Puppeteer:' && npm list puppeteer || echo 'Puppeteer check failed' && echo 'Node modules size:' && du -sh node_modules && echo '=== END POST-INSTALL ==='",
+    "postinstall": "echo '=== POST-INSTALL DEBUG ===' && echo 'Checking Playwright:' && npm list playwright || echo 'Playwright check failed' && echo 'Node modules size:' && du -sh node_modules && echo '=== END POST-INSTALL ==='",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "scraper:test": "node price-scraper/test.js",
-    "scraper:single": "node price-scraper/scraper.js",
-    "scraper:cron": "node cron/scrapePrices.js",
-    "jobs:schedule": "node jobs/scheduler.js",
-    "jobs:worker": "node jobs/worker.js",
-    "test": "jest",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -38,17 +32,5 @@
   },
   "engines": {
     "node": ">=16.0.0"
-  },
-  "puppeteer": {
-    "args": [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-accelerated-2d-canvas",
-      "--no-first-run",
-      "--no-zygote",
-      "--single-process",
-      "--disable-gpu"
-    ]
   }
 }

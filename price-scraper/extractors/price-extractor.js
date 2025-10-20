@@ -74,7 +74,7 @@ export function getPriceLikelihoodScore(element) {
 
 /**
  * Extract price using Amazon-specific selectors first, then universal
- * @param {Page} page - Puppeteer page object
+ * @param {Page} page - Playwright page object
  * @returns {Promise<number|null>}
  */
 export async function extractUniversalPrice(page) {
@@ -178,7 +178,7 @@ export async function extractUniversalPrice(page) {
 
 /**
  * Extract price with scoring fallback (last resort)
- * @param {Page} page - Puppeteer page object
+ * @param {Page} page - Playwright page object
  * @returns {Promise<number|null>}
  */
 export async function extractWithScoring(page) {
@@ -238,7 +238,7 @@ export async function extractWithScoring(page) {
 
 /**
  * Main price extraction function - tries all methods in order
- * @param {Page} page - Puppeteer page object
+ * @param {Page} page - Playwright page object
  * @returns {Promise<number>} - Extracted price
  * @throws {Error} - If no price could be extracted
  */
