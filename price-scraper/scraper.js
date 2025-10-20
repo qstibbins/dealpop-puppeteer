@@ -3,7 +3,7 @@
  * Cron job that checks prices for tracked products
  */
 
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import { extractPrice } from './extractors/price-extractor.js';
 import { extractMetadata } from './extractors/metadata-extractor.js';
 
@@ -14,23 +14,23 @@ import { extractMetadata } from './extractors/metadata-extractor.js';
  * @returns {Promise<Object>} - Result with price or error
  */
 export async function scrapeProduct(browser, product) {
-  const page = await browser.newPage();
-  
+  let page;
   try {
+    page = await browser.newPage();
     console.log(`\n${'='.repeat(80)}`);
     console.log(`🛍️  Scraping: ${product.product_name || product.product_url}`);
     console.log(`${'='.repeat(80)}`);
     
     // Set user agent to avoid bot detection
-    await page.setUserAgent(
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    );
+    await page.setExtraHTTPHeaders({
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    });
     
     // Navigate to product page
     console.log(`🌐 Navigating to: ${product.product_url}`);
     await page.goto(product.product_url, {
-      waitUntil: 'networkidle2',
-      timeout: 30000
+      waitUntil: 'domcontentloaded',
+      timeout: 15000
     });
     
     // Add a small delay to let dynamic content load
@@ -64,7 +64,9 @@ export async function scrapeProduct(browser, product) {
     
   } catch (error) {
     console.error(`\n❌ FAILED: ${error.message}`);
-    await page.close();
+    if (page) {
+      await page.close();
+    }
     
     return {
       productId: product.id,
@@ -84,8 +86,8 @@ export async function runPriceCheck(products) {
   console.log(`\n🚀 Starting price check for ${products.length} products...`);
   console.log(`⏰ ${new Date().toISOString()}\n`);
   
-  const browser = await puppeteer.launch({
-    headless: 'new',
+  const browser = await chromium.launch({
+    headless: true,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -93,7 +95,8 @@ export async function runPriceCheck(products) {
       '--disable-accelerated-2d-canvas',
       '--no-first-run',
       '--no-zygote',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--single-process'
     ]
   });
   
