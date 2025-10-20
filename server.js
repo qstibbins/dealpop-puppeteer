@@ -177,7 +177,7 @@ cron.schedule('*/10 * * * *', () => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Price scraper server running on port ${PORT}`);
+    console.log(`🚀 Price scraper server running on port ${PORT}`); // Updated for App Runner deployment
   console.log(`📅 Scheduled to run every 10 minutes`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 Manual trigger: POST http://localhost:${PORT}/trigger`);
