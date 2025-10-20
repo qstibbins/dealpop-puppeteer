@@ -78,6 +78,7 @@ export function getPriceLikelihoodScore(element) {
  * @returns {Promise<number|null>}
  */
 export async function extractUniversalPrice(page) {
+  console.log('🔍 Starting universal price extraction with selectors...');
   return await page.evaluate((selectors) => {
     console.log('🔍 Trying Amazon-specific selectors first...');
     
@@ -182,6 +183,7 @@ export async function extractUniversalPrice(page) {
  * @returns {Promise<number|null>}
  */
 export async function extractWithScoring(page) {
+  console.log('🔍 Starting price likelihood scoring extraction...');
   return await page.evaluate(() => {
     console.log('🔍 Using price likelihood scoring fallback...');
     
@@ -244,44 +246,68 @@ export async function extractWithScoring(page) {
  */
 export async function extractPrice(page) {
   console.log('🚀 Starting universal price extraction...');
+  const extractionStart = Date.now();
   
   // Wait for page to be fully loaded
+  console.log('⏳ Waiting for page to load...');
   await page.waitForSelector('body', { timeout: 10000 });
+  console.log('✅ Page loaded successfully');
   
   // Strategy 1: Try structured data (works ~70% of the time)
+  console.log('🔍 Strategy 1: Checking structured data...');
   try {
+    const strategyStart = Date.now();
     const structuredPrice = await extractPriceFromStructuredData(page);
+    const strategyTime = Date.now() - strategyStart;
+    
     if (structuredPrice !== null && structuredPrice > 0) {
-      console.log(`✅ SUCCESS: Extracted price from structured data: $${structuredPrice}`);
+      console.log(`✅ SUCCESS: Extracted price from structured data: $${structuredPrice} (${strategyTime}ms)`);
+      console.log(`⏱️  Total extraction time: ${Date.now() - extractionStart}ms`);
       return structuredPrice;
     }
+    console.log(`❌ No price found in structured data (${strategyTime}ms)`);
   } catch (error) {
-    console.warn('⚠️ Structured data extraction failed:', error.message);
+    console.warn(`⚠️ Structured data extraction failed: ${error.message}`);
   }
   
   // Strategy 2: Try universal semantic selectors (works ~20% of the time)
+  console.log('🔍 Strategy 2: Checking universal selectors...');
   try {
+    const strategyStart = Date.now();
     const universalPrice = await extractUniversalPrice(page);
+    const strategyTime = Date.now() - strategyStart;
+    
     if (universalPrice !== null && universalPrice > 0) {
-      console.log(`✅ SUCCESS: Extracted price from universal selectors: $${universalPrice}`);
+      console.log(`✅ SUCCESS: Extracted price from universal selectors: $${universalPrice} (${strategyTime}ms)`);
+      console.log(`⏱️  Total extraction time: ${Date.now() - extractionStart}ms`);
       return universalPrice;
     }
+    console.log(`❌ No price found with universal selectors (${strategyTime}ms)`);
   } catch (error) {
-    console.warn('⚠️ Universal selector extraction failed:', error.message);
+    console.warn(`⚠️ Universal selector extraction failed: ${error.message}`);
   }
   
   // Strategy 3: Try scoring fallback (works ~8% of the time)
+  console.log('🔍 Strategy 3: Using price likelihood scoring...');
   try {
+    const strategyStart = Date.now();
     const scoredPrice = await extractWithScoring(page);
+    const strategyTime = Date.now() - strategyStart;
+    
     if (scoredPrice !== null && scoredPrice > 0) {
-      console.log(`✅ SUCCESS: Extracted price from scoring: $${scoredPrice}`);
+      console.log(`✅ SUCCESS: Extracted price from scoring: $${scoredPrice} (${strategyTime}ms)`);
+      console.log(`⏱️  Total extraction time: ${Date.now() - extractionStart}ms`);
       return scoredPrice;
     }
+    console.log(`❌ No price found with scoring method (${strategyTime}ms)`);
   } catch (error) {
-    console.warn('⚠️ Scoring extraction failed:', error.message);
+    console.warn(`⚠️ Scoring extraction failed: ${error.message}`);
   }
   
   // All strategies failed
+  const totalTime = Date.now() - extractionStart;
+  console.error(`❌ ALL EXTRACTION STRATEGIES FAILED`);
+  console.error(`⏱️  Total extraction time: ${totalTime}ms`);
   throw new Error('Could not extract price from page');
 }
 
