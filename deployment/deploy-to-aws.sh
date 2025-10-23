@@ -208,7 +208,7 @@ echo "---------------------------------"
 
 echo "🔨 Updating task definition with account ID..."
 # Create a temporary task definition file with the correct account ID
-sed "s/437387546619/$ACCOUNT_ID/g" ecs-task-definition.json > ecs-task-definition-temp.json
+sed "s/437387546619/$ACCOUNT_ID/g" deployment/ecs-task-definition-corrected.json > ecs-task-definition-temp.json
 
 echo "📝 Registering task definition..."
 aws ecs register-task-definition \

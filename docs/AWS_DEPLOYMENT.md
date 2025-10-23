@@ -163,10 +163,10 @@ PORT=3000
 
 ```bash
 # Make deployment script executable
-chmod +x deploy-to-aws.sh
+chmod +x deployment/deploy-to-aws.sh
 
 # Run deployment script
-./deploy-to-aws.sh
+./deployment/deploy-to-aws.sh
 ```
 
 The script will:
@@ -206,7 +206,7 @@ Use ECS Fargate for more control over the deployment and scheduling.
 aws ecs create-cluster --cluster-name dealpop-price-checker
 
 # Create task definition
-aws ecs register-task-definition --cli-input-json file://ecs-task-definition.json
+aws ecs register-task-definition --cli-input-json file://deployment/ecs-task-definition-corrected.json
 ```
 
 #### Step 2: Create ECS Service

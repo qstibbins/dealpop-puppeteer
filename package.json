@@ -34,6 +34,7 @@
     "seed:db": "node -e \"import('./db.js').then(m => m.seed())\"",
     "health": "curl http://localhost:3000/health",
     "trigger": "curl -X POST http://localhost:3000/trigger",
+    "test:email": "node scripts/test-production-email.js",
     "docs": "echo '📚 Documentation available in ./docs/ directory' && ls -la docs/"
   },
   "dependencies": {
