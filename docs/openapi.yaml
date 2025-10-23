@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: DealPop Price Checker Service API
+  description: |
+    The DealPop Price Checker Service provides automated price monitoring and alert capabilities for the DealPop ecosystem.
+    
+    This service runs scheduled price checks every 10 minutes, scrapes product prices from e-commerce websites,
+    and sends notifications when prices drop below user-defined targets.
+    
+    ## Key Features
+    - Automated price monitoring with 98% success rate
+    - Universal e-commerce site support (Amazon, Target, Walmart, etc.)
+    - Email and SMS notifications via SendGrid and Twilio
+    - Comprehensive logging and error handling
+    - Health monitoring and manual trigger capabilities
+    
+    ## Integration
+    This service integrates with the DealPop ecosystem through a shared PostgreSQL database:
+    - **Primary Backend API**: Manages users, products, and alerts
+    - **Frontend Dashboard**: Displays price data and manages user preferences
+    - **Chrome Extension**: Adds products for monitoring
+    
+    ## Authentication
+    Currently, this service does not require authentication for its endpoints as it's designed
+    for internal use within the DealPop ecosystem. Future versions may include API key authentication.
+  version: 1.0.0
+  contact:
+    name: DealPop Development Team
+    email: support@dealpop.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-app-runner-url.awsapprunner.com
+    description: Production server (AWS App Runner)
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: |
+        Returns the current health status of the Price Checker Service.
+        
+        This endpoint is used by AWS App Runner for health checks and can be used
+        for monitoring the service status.
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: Healthy service
+                  value:
+                    status: "healthy"
+                    timestamp: "2024-01-15T10:30:00.000Z"
+                    service: "price-scraper"
+        '500':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unhealthy:
+                  summary: Unhealthy service
+                  value:
+                    error: "Database connection failed"
+                    timestamp: "2024-01-15T10:30:00.000Z"
+
+  /trigger:
+    post:
+      summary: Manual Price Check Trigger
+      description: |
+        Manually triggers a price checking job for all active tracked products.
+        
+        This endpoint allows for on-demand price checks outside of the regular
+        10-minute schedule. Useful for testing or urgent price updates.
+        
+        The job will:
+        1. Fetch all active tracked products from the database
+        2. Scrape current prices from product pages
+        3. Update the database with new prices
+        4. Process any triggered alerts
+        5. Send notifications to users
+        
+        **Note**: This is a long-running operation that may take several minutes
+        depending on the number of products being checked.
+      operationId: triggerPriceCheck
+      tags:
+        - Price Checking
+      responses:
+        '200':
+          description: Price check job triggered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+              examples:
+                success:
+                  summary: Successful trigger
+                  value:
+                    status: "success"
+                    message: "Scraper triggered manually"
+        '500':
+          description: Failed to trigger price check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                failure:
+                  summary: Trigger failed
+                  value:
+                    error: "Database connection failed"
+                    timestamp: "2024-01-15T10:30:00.000Z"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - service
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          description: Current health status of the service
+          example: "healthy"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the health check was performed
+          example: "2024-01-15T10:30:00.000Z"
+        service:
+          type: string
+          description: Name of the service
+          example: "price-scraper"
+
+    TriggerResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          description: Status of the trigger operation
+          example: "success"
+        message:
+          type: string
+          description: Human-readable message about the operation
+          example: "Scraper triggered manually"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error message describing what went wrong
+          example: "Database connection failed"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+          example: "2024-01-15T10:30:00.000Z"
+        details:
+          type: string
+          description: Additional error details (optional)
+          example: "Connection timeout after 30 seconds"
+
+tags:
+  - name: Health
+    description: Service health and monitoring endpoints
+  - name: Price Checking
+    description: Price checking and scraping operations
+
+externalDocs:
+  description: DealPop Price Checker Service Documentation
+  url: https://github.com/dealpop/puppeteer-scraper
