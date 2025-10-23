@@ -333,8 +333,10 @@ try {
   console.error('Stack:', error.stack);
 }
 
-// Run scraper once on startup
-console.log('🚀 Starting initial scraper run...');
-runScraperJob().catch(error => {
-  console.error('❌ Initial scraper run failed:', error);
-});
+// Run scraper once on startup (asynchronously after server starts)
+setTimeout(() => {
+  console.log('🚀 Starting initial scraper run...');
+  runScraperJob().catch(error => {
+    console.error('❌ Initial scraper run failed:', error);
+  });
+}, 5000); // Wait 5 seconds for server to fully start
