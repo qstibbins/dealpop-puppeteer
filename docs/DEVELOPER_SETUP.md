@@ -88,6 +88,12 @@ createdb dealpop_dev
 npm run setup-db
 ```
 
+#### Database Schema & Seeding Notes
+- **Schema Synchronization**: This service's `db.js` schema is **fully synchronized** with the backend API
+- **Seed Function**: This repo includes comprehensive test data seeding for development, while the backend uses external scripts for production data
+- **Development Data**: The seed function creates sample users, products, alerts, and price history for testing
+- **Production Data**: Backend uses separate scripts to populate real user data
+
 ### Step 4: Run the Service
 
 ```bash

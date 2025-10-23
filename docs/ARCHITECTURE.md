@@ -194,38 +194,74 @@ The DealPop Price Checker Service is a specialized backend service that provides
 
 ### Database Schema (Shared)
 
-#### Tables This Service Reads
+The database schema is **fully synchronized** with the backend API. Both services use identical table structures, fields, constraints, and indexes.
+
+#### Core Tables This Service Reads
 ```sql
--- Products to monitor
-tracked_products (id, user_id, product_url, product_name, current_price, target_price, status, expires_at)
+-- Products to monitor (enhanced with brand, color, capacity)
+tracked_products (
+  id, user_id, product_url, product_name, product_image_url, 
+  brand, color, capacity, vendor, current_price, target_price, 
+  status, expires_at, extracted_at, created_at, updated_at
+)
 
 -- User information for notifications
-users (firebase_uid, email, display_name)
+users (firebase_uid, email, display_name, created_at, updated_at)
 
--- Price drop alerts to process
-alerts (id, user_id, product_id, target_price, status, notification_preferences)
+-- Comprehensive alerts system
+alerts (
+  id, user_id, product_id, product_name, product_url, product_image_url,
+  current_price, target_price, alert_type, status, 
+  notification_preferences, thresholds, expires_at, triggered_at,
+  last_checked_at, created_at, updated_at
+)
 
--- User notification preferences
-user_alert_preferences (user_id, email_notifications, sms_notifications, phone_number)
+-- Enhanced user notification preferences
+user_alert_preferences (
+  id, user_id, email_notifications, push_notifications, sms_notifications,
+  phone_number, phone_verified, default_price_drop_percentage,
+  default_absolute_price_drop, check_frequency, quiet_hours, timezone,
+  created_at, updated_at
+)
 ```
 
 #### Tables This Service Writes
 ```sql
--- Updates current prices
+-- Updates current prices and metadata
 tracked_products (current_price, updated_at)
 
--- Records historical price data
-price_history (product_id, price, recorded_at)
+-- Records comprehensive historical price data
+price_history (id, product_id, price, in_stock, recorded_at)
 
--- Marks alerts as triggered
-alerts (status, triggered_at)
+-- Manages alert lifecycle
+alerts (status, triggered_at, last_checked_at, updated_at)
 
--- Logs alert events
-alert_history (alert_id, event_type, timestamp)
+-- Logs all alert events with price change tracking
+alert_history (
+  id, alert_id, event_type, old_price, new_price, 
+  price_change, price_change_percentage, message, timestamp
+)
 
--- Tracks notification delivery
-notification_logs (user_id, alert_id, channel, status, sent_at)
+-- Tracks notification delivery across all channels
+notification_logs (
+  id, user_id, alert_id, notification_type, channel, status,
+  sent_at, provider_response, error_message, retry_count, created_at
+)
 ```
+
+#### Additional Tables (Read-Only)
+```sql
+-- Saved user searches
+saved_searches (id, user_id, name, search_query, category, created_at, is_active)
+
+-- A/B Testing analytics
+ab_test_events (id, user_id, session_id, test_name, variant, event_type, event_data, timestamp)
+```
+
+#### Performance Optimizations
+- **Indexes**: Optimized for common query patterns (user_id, status, vendor, timestamps)
+- **Full-text Search**: GIN index on product names, brands, and vendors
+- **Connection Pooling**: Efficient PostgreSQL connection management
 
 ## AWS Architecture
 
