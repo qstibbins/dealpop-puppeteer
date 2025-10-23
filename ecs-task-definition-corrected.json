@@ -1,0 +1,100 @@
+{
+  "family": "dealpop-price-scraper",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::940723107240:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::940723107240:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "dealpop-scraper",
+      "image": "940723107240.dkr.ecr.us-east-2.amazonaws.com/dealpop-scraper:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3000"
+        },
+        {
+          "name": "SENDGRID_FROM_EMAIL",
+          "value": "hello@dealpop.co"
+        },
+        {
+          "name": "EMAIL_FROM_NAME",
+          "value": "DealPop"
+        },
+        {
+          "name": "EMAIL_REPLY_TO",
+          "value": "hello@dealpop.co"
+        },
+        {
+          "name": "DB_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DB_SSL",
+          "value": "true"
+        },
+        {
+          "name": "TWILIO_ACCOUNT_SID",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/twilio-account-sid"
+        },
+        {
+          "name": "TWILIO_AUTH_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/twilio-auth-token"
+        },
+        {
+          "name": "TWILIO_PHONE_NUMBER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/twilio-phone-number"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_HOST",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/db-host-4L9FK5"
+        },
+        {
+          "name": "DB_USER",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/db-user-DsSky8"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/db-password-mxr2Ln"
+        },
+        {
+          "name": "DB_NAME",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/db-name-APUgvT"
+        },
+        {
+          "name": "SENDGRID_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-2:940723107240:secret:dealpop/sendgrid-api-key-Rdf4Ew"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/dealpop-scraper",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

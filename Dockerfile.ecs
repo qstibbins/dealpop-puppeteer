@@ -1,12 +1,13 @@
 # Use Node.js 18 base image
 FROM node:18-slim
 
-# Install system dependencies for Chrome
+# Install system dependencies for Chrome and curl for health checks
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     ca-certificates \
     procps \
+    curl \
     libxss1 \
     libgconf-2-4 \
     libxrandr2 \

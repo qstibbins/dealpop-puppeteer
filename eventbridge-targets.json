@@ -1,0 +1,18 @@
+[
+  {
+    "Id": "1",
+    "Arn": "arn:aws:ecs:us-east-2:940723107240:cluster/dealpop-scraper-cluster",
+    "RoleArn": "arn:aws:iam::940723107240:role/ecsTaskExecutionRole",
+    "EcsParameters": {
+      "TaskDefinitionArn": "arn:aws:ecs:us-east-2:940723107240:task-definition/dealpop-price-scraper:2",
+      "LaunchType": "FARGATE",
+      "NetworkConfiguration": {
+        "awsvpcConfiguration": {
+          "Subnets": ["subnet-0736511eaf0016972"],
+          "SecurityGroups": ["sg-0b110421fe6297147"],
+          "AssignPublicIp": "ENABLED"
+        }
+      }
+    }
+  }
+]
